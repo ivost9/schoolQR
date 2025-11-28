@@ -220,16 +220,27 @@ function App() {
                 </div>
               )}
             </div>
-            <div className="footer">
+            {/* --- ВАРИАНТ 1: ЗА ДЕСКТОП (ВЪТРЕ) --- */}
+            <div className="footer desktop-counter">
               <p className="footer-countdown">
                 {daysUntilChristmas === 0
                   ? "✨ ВЕСЕЛА КОЛЕДА! ✨"
-                  : `⏳ Остават ${daysUntilChristmas} дни до Коледа`}
+                  : `Остават ${daysUntilChristmas} дни до Коледа`}
               </p>
             </div>
           </>
         )}
       </div>
+      {/* --- ВАРИАНТ 2: ЗА МОБИЛНИ (ОТВЪН) --- */}
+      {!isAdmin && (
+        <div className="mobile-counter">
+          <p className="footer-countdown">
+            {daysUntilChristmas === 0
+              ? "✨ ВЕСЕЛА КОЛЕДА! ✨"
+              : `Остават ${daysUntilChristmas} дни до Коледа`}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
