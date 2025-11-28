@@ -151,12 +151,12 @@ function App() {
     <div className="app-container">
       <Snowflakes />
 
-      <div className="corner-decoration tree-corner">
+      {/* <div className="corner-decoration tree-corner">
         <img src={treeImg} alt="Коледна елха" />
       </div>
       <div className="corner-decoration snowman-corner">
         <img src={snowmanImg} alt="Снежен човек" />
-      </div>
+      </div> */}
 
       {!isAdmin && (
         <div className="central-santa-container bounce-animation">
@@ -165,6 +165,12 @@ function App() {
       )}
 
       <div className={`glass-card ${isAdmin ? "admin-mode" : "holiday-mode"}`}>
+        <div className="corner-decoration tree-corner">
+          <img src={treeImg} alt="Коледна елха" />
+        </div>
+        <div className="corner-decoration snowman-corner">
+          <img src={snowmanImg} alt="Снежен човек" />
+        </div>
         {isAdmin ? (
           // --- АДМИН ПАНЕЛ (ТАБЛИЦА) ---
           <div className="admin-container">

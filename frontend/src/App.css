@@ -10,78 +10,61 @@ html {
   overflow-x: hidden;
 }
 
-/* --- ФОН: ТЪМНО СИНЯ КОЛЕДНА НОЩ --- */
+/* --- ФОН --- */
 .app-container {
   width: 100vw;
   min-height: 100vh;
-  /* Градиент: От наситено тъмно синьо (горе) към по-светло кралско синьо (долу) */
   background: linear-gradient(180deg, #001f3f 0%, #003366 50%, #00509d 100%);
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
-
   padding: 20px 0;
   box-sizing: border-box;
 }
 
-/* --- ЪГЛОВИ ДЕКОРАЦИИ --- */
+/* --- ЪГЛОВИ ДЕКОРАЦИИ (DESKTOP DEFAULT) --- */
 .corner-decoration {
-  position: absolute;
-  z-index: 5; /* По-ниско от картата (която е 10), за да минават отзад ако се наложи */
-  pointer-events: none; /* За да не пречат на кликането */
+  /* ВАЖНО: Използваме fixed, за да са в ъглите на ЕКРАНА при десктоп,
+     въпреки че са вътре в картата */
+  position: fixed;
+  z-index: 20;
+  pointer-events: none;
 }
 
 .corner-decoration img {
-  /* Респонсив размер: 
-       На компютър ще са около 250px, 
-       на телефон ще се смалят автоматично */
-  /*width: 25vw;
-  max-width: 250px;
-  min-width: 120px;
-  height: auto;
-
-   
-  filter: drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.4));*/
   width: 25vw;
   max-width: 250px;
   min-width: 120px;
   height: auto;
-
-  /* Сянка за обем */
   filter: drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.4));
 }
 
 .tree-corner {
   top: 0;
-  right: -5%;
+  right: 0; /* Залепено за екрана */
 }
 .snowman-corner {
   bottom: 0;
-  left: -5%;
+  left: 0; /* Залепено за екрана */
 }
 
-/* --- НОВО: ЦЕНТРАЛЕН ДЯДО КОЛЕДА --- */
+/* --- ЦЕНТРАЛЕН ДЯДО КОЛЕДА --- */
 .central-santa-container {
   position: absolute;
-  /* Позициониране в центъра хоризонтално */
   left: 50%;
   transform: translateX(-50%);
-  /* Позициониране вертикално - да стъпи върху картата */
   top: 5%;
-  z-index: 20; /* Най-отпред, над картата */
-  pointer-events: none; /* Да не пречи на кликането по картата */
+  z-index: 25; /* По-висок индекс, за да е над всичко */
+  pointer-events: none;
 }
 
 .central-santa-container img {
-  /* Регулирай размера на централната снимка от тук */
   width: 350px;
   height: auto;
-  /* Силна сянка, за да изпъкне над картата */
   filter: drop-shadow(0px 15px 20px rgba(0, 0, 0, 0.4));
 }
 
-/* Анимация за леко носене във въздуха */
 .bounce-animation {
   animation: hoverSleigh 3s ease-in-out infinite alternate;
 }
@@ -95,55 +78,44 @@ html {
   }
 }
 
-/* --- КАРТА (Лека корекция на оттенъка) --- */
+/* --- КАРТА --- */
 .glass-card {
   width: 90%;
   max-width: 400px;
-  /* Лек син оттенък на стъклото, за да пасне на фона */
   background: rgba(20, 50, 100, 0.25);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 25px;
-  border: 1px solid rgba(255, 255, 255, 0.4); /* По-ярка рамка */
-  box-shadow: 0 8px 32px 0 rgba(0, 20, 60, 0.6); /* Синя сянка */
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 32px 0 rgba(0, 20, 60, 0.6);
   padding: 30px 20px;
   text-align: center;
   color: #fff;
   z-index: 10;
+  /* Важно: relative, за да може децата с absolute да се позиционират спрямо нея */
   position: relative;
   margin-top: 100px;
 }
 
-/* --- ЗАГЛАВИЯ И ТЕКСТОВЕ (Светли цветове) --- */
+/* --- ШРИФТОВЕ --- */
 .holiday-mode h2 {
-  font-family: "Nunito,sans-serif";
+  font-family: "Nunito", sans-serif;
   font-size: 2.2rem;
   margin: 15px 0;
-  color: #ffeb3b; /* Златисто за заглавието, за да свети */
+  color: #ffeb3b;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-.date-badge {
-  background: #d42426; /* Червено баджче */
-  color: white;
-  padding: 5px 15px;
-  border-radius: 50px;
-  font-size: 0.9rem;
-  font-weight: bold;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-  border: 1px solid #ffeb3b;
 }
 
 .fortune-text {
   font-size: 1.5rem;
   line-height: 1.5;
   font-weight: 700;
-  color: #f0f0f0; /* Почти бяло за основния текст */
-  text-shadow: 0 2px 2px rgba(0, 0, 0, 0.8); /* Сянка за четимост */
+  color: #f0f0f0;
+  text-shadow: 0 2px 2px rgba(0, 0, 0, 0.8);
   margin-top: 25px;
 }
 
-/* --- СНЯГ АНИМАЦИЯ --- */
+/* --- СНЯГ --- */
 .snowflake {
   color: #fff;
   position: fixed;
@@ -152,8 +124,6 @@ html {
   user-select: none;
   pointer-events: none;
   text-shadow: 0 0 3px #000;
-
-  /* Анимацията остава */
   animation-name: snowflakes-fall, snowflakes-shake;
   animation-timing-function: linear, ease-in-out;
   animation-iteration-count: infinite, infinite;
@@ -168,25 +138,23 @@ html {
     top: 100%;
   }
 }
-
 @keyframes snowflakes-shake {
   0% {
     transform: translateX(0px);
   }
   50% {
     transform: translateX(40px);
-  } /* Намалих малко клатенето, за да не е хаотично */
+  }
   100% {
     transform: translateX(0px);
   }
 }
 
-/* --- ДРУГИ СТИЛОВЕ --- */
-/* Footer текстът да е светъл */
+/* --- ДРУГИ --- */
 .brand {
   font-size: 0.9rem;
   opacity: 0.8;
-  color: #81c784; /* Светло зелено */
+  color: #81c784;
   margin-top: 30px;
 }
 .spinner {
@@ -258,56 +226,61 @@ html {
   transform: scale(1.05);
 }
 
-/* --- БРОЯЧ (Лека корекция за тъмен фон) --- */
 .countdown-display {
   margin-top: 15px;
-  background: #fff; /* Бял фон */
-  color: #d42426; /* Червен текст */
+  background: #fff;
+  color: #d42426;
   display: inline-block;
   padding: 8px 20px;
   border-radius: 15px;
   font-family: "Nunito", sans-serif;
   font-weight: bold;
   font-size: 1rem;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3); /* Светещ ефект */
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
   border: 2px solid #d42426;
-  /*animation: pulse 2s infinite;*/
 }
 
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-/* --- НАСТРОЙКИ ЗА ТЕЛЕФОН --- */
+/* --- МОБИЛНИ НАСТРОЙКИ (ТУК Е МАГИЯТА) --- */
 @media (max-width: 768px) {
+  /* 1. Превключваме на absolute, за да се залепят за картата, не за екрана */
+  .corner-decoration {
+    position: absolute;
+    z-index: 20;
+    opacity: 1; /* Плътни са, защото са извън текста */
+  }
+
   .corner-decoration img {
-    /*opacity: 0.8; /* Леко ги избледняваме на телефон, за да се чете текста */
-    width: 100px; /* По-малки на телефон */
+    width: 100px;
     min-width: 0;
   }
 
+  /* Позиционираме Елхата на ъгъла на КАРТАТА */
+  .tree-corner {
+    top: -30px; /* Малко над ръба */
+    right: -40px; /* Малко извън ръба */
+  }
+
+  /* Позиционираме Снежния човек на ъгъла на КАРТАТА */
+  .snowman-corner {
+    bottom: -20px; /* Малко под ръба */
+    left: -25px; /* Малко извън ръба */
+    top: auto; /* Нулираме top */
+  }
+
+  /* Сваляме картата надолу */
   .glass-card {
-    /* Картата да е малко по-тясна на телефон, за да не се блъска в картинките */
     width: 85%;
     padding: 15px 10px;
-    margin-top: 140px;
+    margin-top: 180px;
     margin-bottom: 40px;
+    /* Уверяваме се, че картинките се виждат извън картата */
+    overflow: visible;
   }
-  .tree-corner {
-    top: 230px;
-    z-index: 20;
+
+  .holiday-mode h2 {
+    font-size: 1.6rem;
   }
-  .snowman-corner {
-    left: -3%;
-    bottom: 130px;
-    z-index: 20;
+  .fortune-text {
+    font-size: 1.2rem;
   }
 }
