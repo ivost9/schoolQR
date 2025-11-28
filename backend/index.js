@@ -23,70 +23,60 @@ if (!MONGO_URI) {
 const VisitSchema = new mongoose.Schema(
   {
     deviceId: String,
-    date: String,
-    fortune: String,
-    deviceInfo: String,
+    date: String, // Датата (напр. "29.11.2025")
+    fortune: String, // Какво му се е паднало
+    deviceInfo: String, // Какъв телефон е (iPhone/Samsung)
     ipAddress: String,
   },
-  { timestamps: true }
+  { timestamps: true } // <--- ТОВА АВТОМАТИЧНО ЗАПИСВА ЧАСА НА ПЪРВОТО ВЛИЗАНЕ
 );
 
-VisitSchema.index({ createdAt: 1 }, { expireAfterSeconds: 86400 });
+// Изтриваме старите записи след 48 часа (за да не се пълни базата с история от минали дни)
+VisitSchema.index({ createdAt: 1 }, { expireAfterSeconds: 172800 });
 
-// Използваме същата колекция, данните ще се допълнят
-const Visit = mongoose.model("Koleda_NEW_2025", VisitSchema);
+const Visit = mongoose.model("Koleda_Final_Smart", VisitSchema);
 
 // --- ДЕТЕКТИВСКА ФУНКЦИЯ ЗА МОДЕЛИ ---
 const detectExactModel = (ua, screen) => {
   if (!screen) return "Неизвестен екран";
-  const { width, height, pixelRatio } = screen;
+  const { width, height } = screen;
 
-  // 1. АКО Е IPHONE (Проверка по резолюция)
+  // IPHONE
   if (ua.includes("iPhone")) {
-    // iPhone 14 Pro Max / 15 Pro Max / 15 Plus
     if ((width === 430 && height === 932) || (width === 932 && height === 430))
-      return " iPhone 14/15 Pro Max";
-
-    // iPhone 14 Pro / 15 Pro
+      return "iPhone 14/15/16 Pro Max";
     if ((width === 393 && height === 852) || (width === 852 && height === 393))
-      return " iPhone 14/15 Pro";
-
-    // iPhone 12 / 13 / 14 / 13 Pro / 12 Pro (Еднакви екрани)
+      return "iPhone 14/15/16 Pro";
     if ((width === 390 && height === 844) || (width === 844 && height === 390))
-      return " iPhone 12/13/14";
-
-    // iPhone 12 Pro Max / 13 Pro Max / 14 Plus
+      return "iPhone 12/13/14";
     if ((width === 428 && height === 926) || (width === 926 && height === 428))
-      return " iPhone 12/13/14 Max";
-
-    // iPhone 11 Pro / X / XS
-    if (width === 375 && height === 812) return " iPhone X/XS/11 Pro";
-
-    // iPhone 11 / XR
-    if (width === 414 && height === 896) return " iPhone 11/XR";
-
-    // Стари модели (SE / 8 / 7)
-    if (width === 375 && height === 667) return " iPhone SE/8/7";
-
+      return "iPhone 12/13/14 Max";
+    if (width === 375 && height === 812) return "iPhone X/XS/11 Pro";
+    if (width === 414 && height === 896) return "iPhone 11/XR";
+    if (width === 375 && height === 667) return "iPhone SE/8/7";
     return `iPhone`;
   }
-
-  // 2. АКО Е ANDROID (Тук гледаме User Agent-а, защото те си казват модела)
+  // ANDROID
   if (ua.includes("Android")) {
-    // Опитваме се да хванем модела след "Android X;"
-    // Пример: "... Android 13; SM-S918B Build/..." -> S23 Ultra
     const match = ua.match(/Android\s[0-9.]+;\s([^;]+)\sBuild/);
-    if (match && match[1]) {
-      return `🤖 ${match[1].trim()}`;
-    }
-    return "🤖 Android (Unknown Model)";
+    if (match && match[1]) return `🤖 ${match[1].trim()}`;
+    return "🤖 Android";
   }
-
-  // 3. КОМПЮТРИ
+  // PC
   if (ua.includes("Windows")) return "💻 Windows PC";
   if (ua.includes("Macintosh")) return "💻 Mac";
 
   return "❓ Неизвестно";
+};
+
+// --- ФУНКЦИЯ ЗА БЪЛГАРСКО ВРЕМЕ ---
+const getBgDateString = () => {
+  return new Date().toLocaleDateString("bg-BG", {
+    timeZone: "Europe/Sofia",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
 };
 
 app.get("/", (req, res) => res.send("Server OK"));
@@ -106,42 +96,55 @@ app.get("/api/admin-stats", async (req, res) => {
 
 // --- USER ---
 app.post("/api/get-fortune", async (req, res) => {
-  const { deviceId, screenData } = req.body; // Получаваме и screenData
+  const { deviceId, screenData } = req.body;
   if (!deviceId) return res.status(400).json({ error: "Missing ID" });
 
-  const todayStr = new Date().toDateString();
-  const userAgent = req.headers["user-agent"] || "";
-  const userIp =
-    req.ip || req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-
-  // ИЗПОЛЗВАМЕ НОВАТА ЛОГИКА
-  const modelName = detectExactModel(userAgent, screenData);
+  // 1. Взимаме днешната БГ дата
+  const todayStr = getBgDateString();
 
   try {
-    const visitToday = await Visit.findOne({ deviceId, date: todayStr });
+    // 🛑 СПИРАЧКАТА ЗА ДУБЛИРАНЕ 🛑
+    // Проверяваме: Има ли запис за този телефон + тази дата?
+    const visitToday = await Visit.findOne({
+      deviceId: deviceId,
+      date: todayStr,
+    });
 
+    // АКО ВЕЧЕ ИМА ЗАПИС (влиза 2-ри, 3-ти път днес):
     if (visitToday) {
+      console.log(`♻️ Връщаме стар запис, без да пишем в базата.`);
       return res.json({
         allowed: true,
         message: visitToday.fortune,
         isRevisit: true,
       });
+      // ТУК ФУНКЦИЯТА СПИРА (return).
+      // Кодът надолу (Visit.create) НЕ се изпълнява.
     }
+
+    // --- ОТТУК НАДОЛУ СЕ ИЗПЪЛНЯВА САМО ПРИ ПЪРВО ВЛИЗАНЕ ЗА ДЕНЯ ---
 
     const randomFortune =
       FORTUNES.length > 0
         ? FORTUNES[Math.floor(Math.random() * FORTUNES.length)]
         : "Весела Коледа!";
 
+    const userAgent = req.headers["user-agent"] || "";
+    const userIp =
+      req.ip || req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const modelName = detectExactModel(userAgent, screenData);
+
+    // ✅ СЪЗДАВАМЕ ЗАПИС (САМО СЕГА)
     await Visit.create({
       deviceId,
       date: todayStr,
       fortune: randomFortune,
-      deviceInfo: modelName, // Тук вече ще пише "iPhone 14 Pro"
+      deviceInfo: modelName,
       ipAddress: userIp,
     });
+    // Часът се записва автоматично в полето createdAt
 
-    console.log(`✨ Нов: ${modelName}`);
+    console.log(`✨ Първо влизане за деня: ${modelName}`);
 
     return res.json({
       allowed: true,
