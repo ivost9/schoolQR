@@ -302,9 +302,12 @@ html {
     margin-bottom: 40px;
   }
   .tree-corner {
-    bottom: 220px;
+    top: 230px;
+    z-index: 20;
   }
   .snowman-corner {
-    top: 10px;
+    left: -3%;
+    bottom: 130px;
+    z-index: 20;
   }
 }
