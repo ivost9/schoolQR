@@ -34,7 +34,7 @@ const VisitSchema = new mongoose.Schema(
 VisitSchema.index({ createdAt: 1 }, { expireAfterSeconds: 86400 });
 
 // Използваме същата колекция, данните ще се допълнят
-const Visit = mongoose.model("DetailedVisits", VisitSchema);
+const Visit = mongoose.model("Koleda_NEW_2025", VisitSchema);
 
 // --- ДЕТЕКТИВСКА ФУНКЦИЯ ЗА МОДЕЛИ ---
 const detectExactModel = (ua, screen) => {
