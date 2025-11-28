@@ -68,7 +68,7 @@ const detectExactModel = (ua, screen) => {
     // Стари модели (SE / 8 / 7)
     if (width === 375 && height === 667) return " iPhone SE/8/7";
 
-    return ` iPhone (Екран: ${width}x${height})`;
+    return `iPhone`;
   }
 
   // 2. АКО Е ANDROID (Тук гледаме User Agent-а, защото те си казват модела)

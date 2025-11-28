@@ -7,19 +7,22 @@ html {
   width: 100%;
   height: 100%;
   font-family: "Nunito", sans-serif;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 /* --- ФОН: ТЪМНО СИНЯ КОЛЕДНА НОЩ --- */
 .app-container {
   width: 100vw;
-  height: 100vh;
+  min-height: 100vh;
   /* Градиент: От наситено тъмно синьо (горе) към по-светло кралско синьо (долу) */
   background: linear-gradient(180deg, #001f3f 0%, #003366 50%, #00509d 100%);
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
+
+  padding: 20px 0;
+  box-sizing: border-box;
 }
 
 /* --- ЪГЛОВИ ДЕКОРАЦИИ --- */
@@ -294,6 +297,8 @@ html {
   .glass-card {
     /* Картата да е малко по-тясна на телефон, за да не се блъска в картинките */
     width: 85%;
-    padding: 20px 10px;
+    padding: 15px 10px;
+    margin-top: 40px;
+    margin-bottom: 40px;
   }
 }

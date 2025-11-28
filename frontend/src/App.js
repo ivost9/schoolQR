@@ -51,7 +51,6 @@ const getDaysUntilChristmas = () => {
 function App() {
   const [fortune, setFortune] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isRevisit, setIsRevisit] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
   // Променихме 'visits' на 'todaysVisits', за да е ясно, че са само за днес
@@ -137,7 +136,6 @@ function App() {
         });
 
         setFortune(response.data.message);
-        setIsRevisit(response.data.isRevisit);
       } catch (err) {
         console.error(err);
         setFortune("Джуджетата изпуснаха сървъра в преспата. Опитайте пак.");
@@ -228,9 +226,7 @@ function App() {
           // --- ПОТРЕБИТЕЛСКИ ИЗГЛЕД ---
           <>
             <div className="header" style={{ marginTop: "20px" }}>
-              <h2>
-                {isRevisit ? "Твоят Зимен Късмет" : "Късметче от преспата"}
-              </h2>
+              <h2>{"Твоят Зимен Късмет"}</h2>
             </div>
 
             <div className="content">
