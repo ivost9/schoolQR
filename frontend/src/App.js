@@ -7,7 +7,6 @@ import "./App.css";
 import treeImg from "./tree.png";
 import snowmanImg from "./snowman.png";
 import santaSleighImg from "./santa_sleigh.png";
-const API_URL = "https://schoolqr.onrender.com";
 // Подобрен компонент за много сняг
 const Snowflakes = () => {
   const flakes = Array.from({ length: 50 });
@@ -66,7 +65,7 @@ function App() {
   const API_URL =
     window.location.hostname === "localhost"
       ? "http://localhost:5000"
-      : "https://dailyqr.onrender.com";
+      : "https://schoolqr.onrender.com";
 
   const getRealDate = (visit) => {
     if (visit.updatedAt) return new Date(visit.updatedAt);
