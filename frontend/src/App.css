@@ -27,17 +27,16 @@ html {
    1. ДЕКОРАЦИИ ЗА КОМПЮТЪР (Desktop)
    ========================================= */
 .desktop-decor {
-  position: fixed; /* Фиксирани за екрана */
+  position: fixed;
   z-index: 5;
   pointer-events: none;
-  display: block; /* Виждат се на компютър */
+  display: block;
 }
-/* Скриваме мобилните декорации по подразбиране */
 .mobile-decor {
   display: none;
 }
 .mobile-counter {
-  display: none; /* Външният е скрит */
+  display: none;
 }
 .desktop-decor img {
   width: 25vw;
@@ -99,7 +98,7 @@ html {
   z-index: 10;
   position: relative;
   margin-top: 100px;
-  overflow: visible; /* Важно за мобилните декорации да стърчат */
+  overflow: visible;
 }
 
 /* Шрифтове и текстове */
@@ -131,33 +130,23 @@ html {
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
   border: 2px solid #d42426;
 }
+
 /* --- ЕФЕКТЕН БРОЯЧ (БАДЖ) --- */
 .footer-countdown {
   margin-top: 30px;
   display: inline-block;
-
-  /* Празничен фон: Червен градиент */
   background: linear-gradient(135deg, #d42426 0%, #b71c1c 100%);
-
-  /* Текст */
   font-family: "Courier New", Courier, monospace;
   color: #fff;
   font-size: 1.3rem;
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
-  /* Оформяне на бутон/етикет */
   padding: 10px 25px;
   border-radius: 50px;
-  border: 2px solid #ffeb3b; /* Златна рамка */
-
-  /* Сянка и светене */
+  border: 2px solid #ffeb3b;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3), 0 0 10px rgba(212, 36, 38, 0.5);
-
-  /* Анимация */
   animation: glow-pulse 2s infinite ease-in-out;
-
-  /* За да не се маркира текста */
   user-select: none;
 }
 @keyframes glow-pulse {
@@ -166,8 +155,8 @@ html {
     box-shadow: 0 0 0 rgba(212, 36, 38, 0.4);
   }
   50% {
-    box-shadow: 0 0 20px rgba(255, 235, 59, 0.6); /* Златно сияние */
-    border-color: #fff; /* Рамката става бяла за миг */
+    box-shadow: 0 0 20px rgba(255, 235, 59, 0.6);
+    border-color: #fff;
   }
   100% {
     transform: scale(1);
@@ -205,51 +194,141 @@ html {
   }
 }
 
-/* Админ стилове */
+/* =========================================
+   АДМИН СТИЛОВЕ (НОВ ДИЗАЙН С КАРТИ)
+   ========================================= */
 .admin-mode {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(245, 247, 250, 0.95); /* Бяло-сив плътен фон */
   border: 3px solid #d42426;
   color: #333;
   margin-top: 20px;
 }
-.logs-wrapper {
-  max-height: 300px;
-  overflow-y: auto;
-  margin-top: 15px;
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 10px;
+
+.admin-container {
   padding: 10px;
 }
-.log-row {
+
+.admin-header h3 {
+  margin-top: 0;
+  color: #d42426;
+}
+
+.logs-wrapper {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-top: 15px;
+  padding: 5px; /* Място за сенките */
+}
+
+/* Скролбар за админ панела */
+.logs-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+.logs-wrapper::-webkit-scrollbar-thumb {
+  background-color: #d42426;
+  border-radius: 10px;
+}
+
+/* КАРТА ЗА ВСЕКИ ЗАПИС */
+.list-item {
+  background-color: #ffffff;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.list-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* ЗАГЛАВНА ЧАСТ */
+.item-header {
+  padding: 15px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px dashed rgba(0, 0, 0, 0.2);
-  font-size: 0.85rem;
-  text-align: left;
-  color: #333;
+  background: #fff;
+  border-bottom: 1px solid transparent; /* За да не мърда при отваряне */
 }
+
+.list-item.expanded .item-header {
+  border-bottom: 1px solid #eee;
+}
+
 .col-time {
-  width: 15%;
-  font-weight: bold;
+  font-weight: 800;
+  color: #d42426;
+  font-size: 1rem;
+  min-width: 50px;
 }
+
 .col-device {
-  width: 25%;
+  flex-grow: 1;
+  padding-left: 15px;
+  padding-right: 15px;
   color: #003366;
-  font-weight: bold;
+  font-weight: 600;
+  font-size: 0.9rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.col-fortune {
-  width: 55%;
+
+.arrow-icon {
+  color: #999;
+  font-size: 0.8rem;
+  transition: transform 0.3s ease;
+}
+
+/* СКРИТА ЧАСТ (ДЕТАЙЛИ) */
+.item-details {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  background-color: #f8f9fa; /* Светло сиво */
+  transition: max-height 0.5s ease, opacity 0.3s ease, padding 0.3s ease;
+}
+
+/* ОТВОРЕНО СЪСТОЯНИЕ */
+.list-item.expanded .arrow-icon {
+  transform: rotate(180deg);
+}
+
+.list-item.expanded .item-details {
+  max-height: 500px;
+  opacity: 1;
+  padding: 15px;
+}
+
+/* Стил на текста вътре */
+.detail-row {
+  margin-bottom: 10px;
+}
+
+.detail-row strong {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+
+.full-fortune {
+  font-size: 1rem;
+  color: #333;
+  line-height: 1.5;
   font-style: italic;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: #555;
+  margin: 0;
+  font-family: "Nunito", sans-serif;
 }
+
 .exit-btn {
   margin-top: 20px;
   background: #d42426;
@@ -265,34 +344,28 @@ html {
    3. МОБИЛНА ВЕРСИЯ (Mobile)
    ========================================= */
 @media (max-width: 768px) {
-  /* СКРИВАМЕ Десктоп декорациите */
   .desktop-decor {
     display: none;
   }
 
-  /* ПОКАЗВАМЕ Мобилните декорации */
   .mobile-decor {
     display: block;
-    position: absolute; /* Залепени за картата */
+    position: absolute;
     z-index: 20;
   }
   .mobile-decor img {
     width: 100px;
   }
 
-  /* Настройки за Елхата (Мобилно) */
   .tree-mobile {
     top: -35px;
     right: -25px;
   }
-
-  /* Настройки за Снежния човек (Мобилно) */
   .snowman-mobile {
     bottom: -25px;
     left: -25px;
   }
 
-  /* Местим картата */
   .glass-card {
     width: 85%;
     padding: 15px 10px;
@@ -311,14 +384,12 @@ html {
     font-size: 0.7rem;
     padding: 12px 30px;
   }
-  /* СКРИВАМЕ Вътрешния (Десктоп) */
+
   .desktop-counter {
     display: none;
   }
-
-  /* ПОКАЗВАМЕ Външния (Мобилен) */
   .mobile-counter {
     display: block;
-    z-index: 30; /* Да е най-отгоре */
+    z-index: 30;
   }
 }

@@ -53,7 +53,16 @@ function App() {
   const daysUntilChristmas = getDaysUntilChristmas();
   const urlParams = new URLSearchParams(window.location.search);
   const secretKey = urlParams.get("secret");
+  const [expandedRow, setExpandedRow] = useState(null);
 
+  // Функция за превключвате
+  const toggleRow = (id) => {
+    if (expandedRow === id) {
+      setExpandedRow(null); // Затваряме, ако е кликнато същото
+    } else {
+      setExpandedRow(id); // Отваряме новото
+    }
+  };
   const getRealDate = (visit) => {
     if (visit.updatedAt) return new Date(visit.updatedAt);
     if (visit.createdAt) return new Date(visit.createdAt);
@@ -158,34 +167,63 @@ function App() {
                 </span>
               </div>
             </div>
+
             <div className="logs-wrapper">
               {loading ? (
                 <div className="spinner"></div>
               ) : (
                 <div className="logs-list">
                   {stats.todaysVisits.length === 0 ? (
-                    <p style={{ padding: "20px", opacity: 0.7 }}>
+                    <p style={{ padding: "20px", opacity: 0.7, color: "#fff" }}>
                       Няма посетители днес.
                     </p>
                   ) : (
-                    stats.todaysVisits.map((visit, index) => {
+                    stats.todaysVisits.map((visit) => {
                       const dateObj = getRealDate(visit);
                       const timeStr = dateObj.toLocaleTimeString("bg-BG", {
                         hour: "2-digit",
                         minute: "2-digit",
                       });
+
+                      // Проверяваме дали този ред е отворен
+                      const isExpanded = expandedRow === visit._id;
+
                       return (
                         <div
                           key={visit._id}
-                          className="log-row fade-in"
-                          style={{ animationDelay: `${index * 0.05}s` }}
+                          className={`list-item ${
+                            isExpanded ? "expanded" : ""
+                          }`}
+                          onClick={() => toggleRow(visit._id)}
                         >
-                          <div className="col-time">{timeStr}</div>
-                          <div className="col-device">
-                            {visit.deviceInfo || "❓"}
+                          {/* ГОРНА ЧАСТ (Винаги видима) */}
+                          <div className="item-header">
+                            <span className="col-time">{timeStr}</span>
+                            <span className="col-device">
+                              {visit.deviceInfo || "❓"}
+                            </span>
+                            <span className="arrow-icon">▼</span>
                           </div>
-                          <div className="col-fortune">
-                            {visit.fortune || "Неизвестно"}
+
+                          {/* ДОЛНА ЧАСТ (Скрита, показва се при клик) */}
+                          <div className="item-details">
+                            <div className="detail-row">
+                              <strong>Късметче:</strong>
+                              <p className="full-fortune">
+                                {visit.fortune || "Неизвестно"}
+                              </p>
+                            </div>
+                            {/* Можеш да добавиш и IP адрес тук ако искаш */}
+                            <div
+                              className="detail-row"
+                              style={{
+                                fontSize: "0.8rem",
+                                color: "#999",
+                                marginTop: "10px",
+                              }}
+                            >
+                              ID: {visit.deviceId.substring(0, 8)}...
+                            </div>
                           </div>
                         </div>
                       );
@@ -204,9 +242,7 @@ function App() {
         ) : (
           <>
             <div className="header">
-              <h2>
-                {isRevisit ? "Твоят Зимен Късмет" : "Късметче от преспата"}
-              </h2>
+              <h2>Твоят Зимен Късмет</h2>
             </div>
             <div className="content">
               {loading ? (
