@@ -8,45 +8,48 @@ import treeImg from "./tree.png";
 import snowmanImg from "./snowman.png";
 import santaSleighImg from "./santa_sleigh.png";
 
-const API_URL = "https://schoolqr.onrender.com"; // Твоят линк
+// --- 1. АВТОМАТИЧЕН ИЗБОР НА СЪРВЪР ---
+// Ако тестваш локално ползва localhost, ако го качиш - ползва Render
+const API_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000"
+    : "https://schoolqr.onrender.com";
 
-// --- СИГУРНА ФУНКЦИЯ ЗА ID ---
-// Това гарантира, че дори localStorage да е забранен, сайтът няма да забие
+// --- 2. СИГУРНА ФУНКЦИЯ ЗА ID ---
 const getOrCreateDeviceId = () => {
   try {
     let id = localStorage.getItem("device_uuid");
     if (!id) {
       id = uuidv4();
       localStorage.setItem("device_uuid", id);
-      console.log("🆕 Генерирано ново ID:", id);
-    } else {
-      console.log("💾 Намерено старо ID:", id);
     }
     return id;
   } catch (error) {
-    console.error("⚠️ Грешка с localStorage (може би е Private Mode):", error);
-    return uuidv4(); // Връщаме временно ID, ако паметта е забранена
+    console.error("⚠️ Грешка с localStorage:", error);
+    return uuidv4();
   }
 };
 
+// --- ПОМОЩНИ ФУНКЦИИ ЗА ДИЗАЙНА ---
 const Snowflakes = () => {
   const flakes = Array.from({ length: 50 });
   return (
     <div className="snowflakes" aria-hidden="true">
-      {flakes.map((_, i) => {
-        const style = {
-          left: `${Math.random() * 100}%`,
-          animationDelay: `${Math.random() * 5}s`,
-          animationDuration: `${Math.random() * 5 + 10}s`,
-          opacity: Math.random(),
-          fontSize: `${Math.random() * 10 + 10}px`,
-        };
-        return (
-          <div key={i} className="snowflake" style={style}>
-            ❅
-          </div>
-        );
-      })}
+      {flakes.map((_, i) => (
+        <div
+          key={i}
+          className="snowflake"
+          style={{
+            left: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 5}s`,
+            animationDuration: `${Math.random() * 5 + 10}s`,
+            opacity: Math.random(),
+            fontSize: `${Math.random() * 10 + 10}px`,
+          }}
+        >
+          ❅
+        </div>
+      ))}
     </div>
   );
 };
@@ -62,59 +65,64 @@ const getDaysUntilChristmas = () => {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
 
+// Функция за извличане на реална дата от записа
+const getRealDate = (visit) => {
+  if (visit.updatedAt) return new Date(visit.updatedAt);
+  if (visit.createdAt) return new Date(visit.createdAt);
+  // Резервен вариант: вадим от ID-то
+  return new Date(parseInt(visit._id.substring(0, 8), 16) * 1000);
+};
+
+// Функция за проверка дали датата е ДНЕС (БГ време)
+const isDateToday = (dateObj) => {
+  const todayStr = new Date().toLocaleDateString("bg-BG", {
+    timeZone: "Europe/Sofia",
+  });
+  const checkStr = dateObj.toLocaleDateString("bg-BG", {
+    timeZone: "Europe/Sofia",
+  });
+  return todayStr === checkStr;
+};
+
 function App() {
+  // Състояния (State)
   const [fortune, setFortune] = useState(null);
   const [loading, setLoading] = useState(true);
-  // eslint-disable-next-line no-unused-vars
-  const [isRevisit, setIsRevisit] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [stats, setStats] = useState({ count: 0, todaysVisits: [] });
+  const [expandedRow, setExpandedRow] = useState(null);
+  // eslint-disable-next-line no-unused-vars
+  const [isRevisit, setIsRevisit] = useState(false);
 
   const daysUntilChristmas = getDaysUntilChristmas();
   const urlParams = new URLSearchParams(window.location.search);
   const secretKey = urlParams.get("secret");
-  const [expandedRow, setExpandedRow] = useState(null);
-
-  // Използваме useRef, за да сме сигурни, че заявката се праща само веднъж при зареждане
   const requestSent = useRef(false);
 
+  // Функция за отваряне на ред (за админ панела)
   const toggleRow = (id) => {
-    if (expandedRow === id) {
-      setExpandedRow(null);
-    } else {
-      setExpandedRow(id);
-    }
-  };
-
-  const getRealDate = (visit) => {
-    if (visit.updatedAt) return new Date(visit.updatedAt);
-    if (visit.createdAt) return new Date(visit.createdAt);
-    return new Date(parseInt(visit._id.substring(0, 8), 16) * 1000);
-  };
-
-  const isToday = (someDate) => {
-    const today = new Date();
-    return (
-      someDate.getDate() === today.getDate() &&
-      someDate.getMonth() === today.getMonth() &&
-      someDate.getFullYear() === today.getFullYear()
-    );
+    setExpandedRow(expandedRow === id ? null : id);
   };
 
   useEffect(() => {
-    // 1. АДМИН ЛОГИКА
+    // --- ЛОГИКА ЗА АДМИН ---
     if (secretKey) {
       setIsAdmin(true);
       axios
         .get(`${API_URL}/api/admin-stats?secret=${secretKey}`)
         .then((res) => {
           const allVisits = res.data.visits;
+
+          // 1. Филтрираме само днешните (за да пасва на дизайна "Дневен списък")
           const filteredToday = allVisits.filter((visit) =>
-            isToday(getRealDate(visit))
+            isDateToday(getRealDate(visit))
           );
+
+          // 2. Сортираме най-новите най-отгоре
           const sortedVisits = filteredToday.sort(
             (a, b) => getRealDate(b) - getRealDate(a)
           );
+
           setStats({ count: sortedVisits.length, todaysVisits: sortedVisits });
           setLoading(false);
         })
@@ -126,39 +134,23 @@ function App() {
       return;
     }
 
-    // 2. ПОТРЕБИТЕЛСКА ЛОГИКА (Само ако не е пращана заявка)
+    // --- ЛОГИКА ЗА ПОТРЕБИТЕЛ ---
     if (requestSent.current) return;
     requestSent.current = true;
 
-    const deviceId = getOrCreateDeviceId(); // Взимаме ID-то по сигурния начин
+    const deviceId = getOrCreateDeviceId();
 
     const fetchFortune = async () => {
       try {
-        const screenData = {
-          width: window.screen.width, // Физическата ширина на екрана
-          height: window.screen.height, // Физическата височина
-          pixelRatio: window.devicePixelRatio || 1,
-        };
-
-        console.log(
-          `📡 Изпращам заявка: ID=${deviceId}, Screen=${screenData.width}x${screenData.height}`
-        );
-
+        // Изпращаме само ID, без screenData
         const response = await axios.post(`${API_URL}/api/get-fortune`, {
           deviceId: deviceId,
-          screenData: screenData,
         });
 
         setFortune(response.data.message);
         setIsRevisit(response.data.isRevisit);
-
-        if (response.data.isRevisit) {
-          console.log("♻️ Сървърът каза: Това е повторно посещение.");
-        } else {
-          console.log("✨ Сървърът каза: Това е нов късмет.");
-        }
       } catch (err) {
-        console.error("❌ Грешка при връзка:", err);
+        console.error("Error:", err);
         setFortune("Джуджетата изпуснаха сървъра. Опитайте пак.");
       } finally {
         setLoading(false);
@@ -168,11 +160,12 @@ function App() {
     fetchFortune();
   }, [secretKey]);
 
+  // --- ДИЗАЙН (Запазен на 100%) ---
   return (
     <div className="app-container">
       <Snowflakes />
 
-      {/* --- КОМПЛЕКТ 1: ЗА КОМПЮТЪР (Извън картата) --- */}
+      {/* PC Декорация */}
       <div className="desktop-decor tree-corner">
         <img src={treeImg} alt="Елха" />
       </div>
@@ -187,7 +180,7 @@ function App() {
       )}
 
       <div className={`glass-card ${isAdmin ? "admin-mode" : "holiday-mode"}`}>
-        {/* --- КОМПЛЕКТ 2: ЗА ТЕЛЕФОН (Вътре в картата) --- */}
+        {/* Мобилна декорация */}
         <div className="mobile-decor tree-mobile">
           <img src={treeImg} alt="Елха" />
         </div>
@@ -236,7 +229,11 @@ function App() {
                           <div className="item-header">
                             <span className="col-time">{timeStr}</span>
                             <span className="col-device">
-                              {visit.deviceInfo || "❓"}
+                              ID:{" "}
+                              {visit.deviceId
+                                ? visit.deviceId.substring(0, 5)
+                                : "?"}
+                              ...
                             </span>
                             <span className="arrow-icon">▼</span>
                           </div>
@@ -256,11 +253,7 @@ function App() {
                                 marginTop: "10px",
                               }}
                             >
-                              ID:{" "}
-                              {visit.deviceId
-                                ? visit.deviceId.substring(0, 8)
-                                : "N/A"}
-                              ...
+                              Пълно ID: {visit.deviceId}
                             </div>
                           </div>
                         </div>
@@ -294,7 +287,6 @@ function App() {
                 </div>
               )}
             </div>
-
             <div className="footer desktop-counter">
               <p className="footer-countdown">
                 {daysUntilChristmas === 0
