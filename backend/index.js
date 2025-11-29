@@ -36,7 +36,7 @@ const VisitSchema = new mongoose.Schema(
 // Оставяме само индекса за бързина.
 VisitSchema.index({ date: 1, ipAddress: 1, deviceInfo: 1 });
 
-const Visit = mongoose.model("Koleda_Final_Smart", VisitSchema);
+const Visit = mongoose.model("Koleda", VisitSchema);
 
 // --- ⏰ АВТОМАТИЧНО ИЗЧИСТВАНЕ В 00:00 ---
 // '0 0 * * *' означава: Минута 0, Час 0 (Полунощ), Всеки ден
