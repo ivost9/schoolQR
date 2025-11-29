@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import "./App.css";
@@ -8,7 +8,26 @@ import treeImg from "./tree.png";
 import snowmanImg from "./snowman.png";
 import santaSleighImg from "./santa_sleigh.png";
 
-const API_URL = "https://schoolqr.onrender.com"; // Увери се, че това е твоят линк
+const API_URL = "https://schoolqr.onrender.com"; // Твоят линк
+
+// --- СИГУРНА ФУНКЦИЯ ЗА ID ---
+// Това гарантира, че дори localStorage да е забранен, сайтът няма да забие
+const getOrCreateDeviceId = () => {
+  try {
+    let id = localStorage.getItem("device_uuid");
+    if (!id) {
+      id = uuidv4();
+      localStorage.setItem("device_uuid", id);
+      console.log("🆕 Генерирано ново ID:", id);
+    } else {
+      console.log("💾 Намерено старо ID:", id);
+    }
+    return id;
+  } catch (error) {
+    console.error("⚠️ Грешка с localStorage (може би е Private Mode):", error);
+    return uuidv4(); // Връщаме временно ID, ако паметта е забранена
+  }
+};
 
 const Snowflakes = () => {
   const flakes = Array.from({ length: 50 });
@@ -46,6 +65,7 @@ const getDaysUntilChristmas = () => {
 function App() {
   const [fortune, setFortune] = useState(null);
   const [loading, setLoading] = useState(true);
+  // eslint-disable-next-line no-unused-vars
   const [isRevisit, setIsRevisit] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [stats, setStats] = useState({ count: 0, todaysVisits: [] });
@@ -55,14 +75,17 @@ function App() {
   const secretKey = urlParams.get("secret");
   const [expandedRow, setExpandedRow] = useState(null);
 
-  // Функция за превключвате
+  // Използваме useRef, за да сме сигурни, че заявката се праща само веднъж при зареждане
+  const requestSent = useRef(false);
+
   const toggleRow = (id) => {
     if (expandedRow === id) {
-      setExpandedRow(null); // Затваряме, ако е кликнато същото
+      setExpandedRow(null);
     } else {
-      setExpandedRow(id); // Отваряме новото
+      setExpandedRow(id);
     }
   };
+
   const getRealDate = (visit) => {
     if (visit.updatedAt) return new Date(visit.updatedAt);
     if (visit.createdAt) return new Date(visit.createdAt);
@@ -79,6 +102,7 @@ function App() {
   };
 
   useEffect(() => {
+    // 1. АДМИН ЛОГИКА
     if (secretKey) {
       setIsAdmin(true);
       axios
@@ -102,31 +126,45 @@ function App() {
       return;
     }
 
-    let deviceId = localStorage.getItem("device_uuid");
-    if (!deviceId) {
-      deviceId = uuidv4();
-      localStorage.setItem("device_uuid", deviceId);
-    }
+    // 2. ПОТРЕБИТЕЛСКА ЛОГИКА (Само ако не е пращана заявка)
+    if (requestSent.current) return;
+    requestSent.current = true;
+
+    const deviceId = getOrCreateDeviceId(); // Взимаме ID-то по сигурния начин
 
     const fetchFortune = async () => {
       try {
         const screenData = {
-          width: window.screen.width,
-          height: window.screen.height,
+          width: window.screen.width, // Физическата ширина на екрана
+          height: window.screen.height, // Физическата височина
           pixelRatio: window.devicePixelRatio || 1,
         };
+
+        console.log(
+          `📡 Изпращам заявка: ID=${deviceId}, Screen=${screenData.width}x${screenData.height}`
+        );
+
         const response = await axios.post(`${API_URL}/api/get-fortune`, {
           deviceId: deviceId,
           screenData: screenData,
         });
+
         setFortune(response.data.message);
         setIsRevisit(response.data.isRevisit);
+
+        if (response.data.isRevisit) {
+          console.log("♻️ Сървърът каза: Това е повторно посещение.");
+        } else {
+          console.log("✨ Сървърът каза: Това е нов късмет.");
+        }
       } catch (err) {
+        console.error("❌ Грешка при връзка:", err);
         setFortune("Джуджетата изпуснаха сървъра. Опитайте пак.");
       } finally {
         setLoading(false);
       }
     };
+
     fetchFortune();
   }, [secretKey]);
 
@@ -134,7 +172,7 @@ function App() {
     <div className="app-container">
       <Snowflakes />
 
-      {/* --- КОМПЛЕКТ 1: ЗА КОМПЮТЪР (Извън картата, по ъглите на екрана) --- */}
+      {/* --- КОМПЛЕКТ 1: ЗА КОМПЮТЪР (Извън картата) --- */}
       <div className="desktop-decor tree-corner">
         <img src={treeImg} alt="Елха" />
       </div>
@@ -149,7 +187,7 @@ function App() {
       )}
 
       <div className={`glass-card ${isAdmin ? "admin-mode" : "holiday-mode"}`}>
-        {/* --- КОМПЛЕКТ 2: ЗА ТЕЛЕФОН (Вътре в картата, залепени за нея) --- */}
+        {/* --- КОМПЛЕКТ 2: ЗА ТЕЛЕФОН (Вътре в картата) --- */}
         <div className="mobile-decor tree-mobile">
           <img src={treeImg} alt="Елха" />
         </div>
@@ -185,7 +223,6 @@ function App() {
                         minute: "2-digit",
                       });
 
-                      // Проверяваме дали този ред е отворен
                       const isExpanded = expandedRow === visit._id;
 
                       return (
@@ -196,7 +233,6 @@ function App() {
                           }`}
                           onClick={() => toggleRow(visit._id)}
                         >
-                          {/* ГОРНА ЧАСТ (Винаги видима) */}
                           <div className="item-header">
                             <span className="col-time">{timeStr}</span>
                             <span className="col-device">
@@ -205,7 +241,6 @@ function App() {
                             <span className="arrow-icon">▼</span>
                           </div>
 
-                          {/* ДОЛНА ЧАСТ (Скрита, показва се при клик) */}
                           <div className="item-details">
                             <div className="detail-row">
                               <strong>Късметче:</strong>
@@ -213,7 +248,6 @@ function App() {
                                 {visit.fortune || "Неизвестно"}
                               </p>
                             </div>
-                            {/* Можеш да добавиш и IP адрес тук ако искаш */}
                             <div
                               className="detail-row"
                               style={{
@@ -222,7 +256,11 @@ function App() {
                                 marginTop: "10px",
                               }}
                             >
-                              ID: {visit.deviceId.substring(0, 8)}...
+                              ID:{" "}
+                              {visit.deviceId
+                                ? visit.deviceId.substring(0, 8)
+                                : "N/A"}
+                              ...
                             </div>
                           </div>
                         </div>
@@ -256,7 +294,7 @@ function App() {
                 </div>
               )}
             </div>
-            {/* --- ВАРИАНТ 1: ЗА ДЕСКТОП (ВЪТРЕ) --- */}
+
             <div className="footer desktop-counter">
               <p className="footer-countdown">
                 {daysUntilChristmas === 0
@@ -267,7 +305,7 @@ function App() {
           </>
         )}
       </div>
-      {/* --- ВАРИАНТ 2: ЗА МОБИЛНИ (ОТВЪН) --- */}
+
       {!isAdmin && (
         <div className="mobile-counter">
           <p className="footer-countdown">
