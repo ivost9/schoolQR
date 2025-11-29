@@ -3,6 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const cron = require("node-cron"); // <--- 1. НОВ ПАКЕТ
 const FORTUNES = require("./fortunes");
 const app = express();
 
@@ -23,18 +24,41 @@ if (!MONGO_URI) {
 const VisitSchema = new mongoose.Schema(
   {
     deviceId: String,
-    date: String, // Датата (напр. "29.11.2025")
-    fortune: String, // Какво му се е паднало
-    deviceInfo: String, // Какъв телефон е (iPhone/Samsung)
+    date: String,
+    fortune: String,
+    deviceInfo: String,
     ipAddress: String,
   },
-  { timestamps: true } // <--- ТОВА АВТОМАТИЧНО ЗАПИСВА ЧАСА НА ПЪРВОТО ВЛИЗАНЕ
+  { timestamps: true }
 );
 
-// Изтриваме старите записи след 48 часа (за да не се пълни базата с история от минали дни)
-VisitSchema.index({ createdAt: 1 }, { expireAfterSeconds: 172800 });
+// Тук махнах стария TTL (expireAfterSeconds), защото вече ще трием ръчно всяка нощ.
+// Оставяме само индекса за бързина.
+VisitSchema.index({ date: 1, ipAddress: 1, deviceInfo: 1 });
 
 const Visit = mongoose.model("Koleda_Final_Smart", VisitSchema);
+
+// --- ⏰ АВТОМАТИЧНО ИЗЧИСТВАНЕ В 00:00 ---
+// '0 0 * * *' означава: Минута 0, Час 0 (Полунощ), Всеки ден
+cron.schedule(
+  "0 0 * * *",
+  async () => {
+    console.log("🕛 НАСТЪПИ НОВ ДЕН! Започвам изчистване на базата...");
+
+    try {
+      const result = await Visit.deleteMany({}); // Изтрива ВСИЧКИ записи
+      console.log(
+        `✅ УСПЕХ: Базата е изчистена. Изтрити записи: ${result.deletedCount}`
+      );
+    } catch (err) {
+      console.error("❌ ГРЕШКА при изчистване на базата:", err);
+    }
+  },
+  {
+    scheduled: true,
+    timezone: "Europe/Sofia", // Важно! За да е 00:00 в България, а не по Гринуич
+  }
+);
 
 // --- ДЕТЕКТИВСКА ФУНКЦИЯ ЗА МОДЕЛИ ---
 const detectExactModel = (ua, screen) => {
@@ -97,54 +121,47 @@ app.get("/api/admin-stats", async (req, res) => {
 // --- USER ---
 app.post("/api/get-fortune", async (req, res) => {
   const { deviceId, screenData } = req.body;
-  if (!deviceId) return res.status(400).json({ error: "Missing ID" });
-
-  // 1. Взимаме днешната БГ дата
   const todayStr = getBgDateString();
 
+  const userAgent = req.headers["user-agent"] || "";
+  const userIp =
+    req.ip || req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  const modelName = detectExactModel(userAgent, screenData);
+
   try {
-    // 🛑 СПИРАЧКАТА ЗА ДУБЛИРАНЕ 🛑
-    // Проверяваме: Има ли запис за този телефон + тази дата?
+    // 🛑 УМНА ПРОВЕРКА (ID или IP+Model)
     const visitToday = await Visit.findOne({
-      deviceId: deviceId,
       date: todayStr,
+      $or: [
+        { deviceId: deviceId },
+        { ipAddress: userIp, deviceInfo: modelName },
+      ],
     });
 
-    // АКО ВЕЧЕ ИМА ЗАПИС (влиза 2-ри, 3-ти път днес):
     if (visitToday) {
-      console.log(`♻️ Връщаме стар запис, без да пишем в базата.`);
+      console.log(`♻️ REVISIT: ${modelName} (IP: ${userIp})`);
       return res.json({
         allowed: true,
         message: visitToday.fortune,
         isRevisit: true,
       });
-      // ТУК ФУНКЦИЯТА СПИРА (return).
-      // Кодът надолу (Visit.create) НЕ се изпълнява.
     }
 
-    // --- ОТТУК НАДОЛУ СЕ ИЗПЪЛНЯВА САМО ПРИ ПЪРВО ВЛИЗАНЕ ЗА ДЕНЯ ---
-
+    // --- НОВО ВЛИЗАНЕ ---
     const randomFortune =
       FORTUNES.length > 0
         ? FORTUNES[Math.floor(Math.random() * FORTUNES.length)]
         : "Весела Коледа!";
 
-    const userAgent = req.headers["user-agent"] || "";
-    const userIp =
-      req.ip || req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-    const modelName = detectExactModel(userAgent, screenData);
-
-    // ✅ СЪЗДАВАМЕ ЗАПИС (САМО СЕГА)
     await Visit.create({
-      deviceId,
+      deviceId: deviceId || "unknown",
       date: todayStr,
       fortune: randomFortune,
       deviceInfo: modelName,
       ipAddress: userIp,
     });
-    // Часът се записва автоматично в полето createdAt
 
-    console.log(`✨ Първо влизане за деня: ${modelName}`);
+    console.log(`✨ NEW VISIT: ${modelName} (IP: ${userIp})`);
 
     return res.json({
       allowed: true,
